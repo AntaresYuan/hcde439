@@ -2,7 +2,7 @@
 
 Welcome to the HCDE 439 example Github repository!
 
-Instructor: Samantha Speer
+Student: Antares Yuan
 
 ## What is Git? What is Github?
 
