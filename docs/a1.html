@@ -4,15 +4,196 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
 
-    <title>Example Student's HCDE 439 Physical Computing Page!</title>
+    <title>Antares Yuan's HCDE 439 Assignment 1: Blink!</title>
 
     <link href="style.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
-    <h1>Example Student's Assignment 1!</h1>
-    <div class="header">
-      <img src="red-panda.jpg" />
-      <p>Here is all the documentation for assignment 1!</p>
-    </div>
+    <p class="back"><a href="index.html">&larr; Back to home</a></p>
+    <h1>Assignment 1: Blink!</h1>
+    <p class="intro">
+      For this assignment I wired three red LEDs to an Arduino Uno and created
+      a blink pattern: the LEDs light up one at a time, then all three flash
+      together, and the pattern repeats again and again...
+    </p>
+
+    <section>
+      <h2>Schematic</h2>
+      <figure>
+        <img
+          src="a1-schematic.jpg"
+          alt="Hand-drawn schematic: Arduino Uno pins 9, 10 and 11 each connect through a 220Ω resistor to a red LED, and all three LEDs return to GND"
+        />
+        <figcaption>
+          Schematic of my circuit. Each red LED connects to its own pin (9,
+          10, and 11) through a 220&Omega; resistor, and all three share
+          ground.
+        </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="a1-calculation.jpg"
+          alt="Handwritten resistor calculation ending with I = 3v / 220Ω = 0.0136A, which is less than 0.02A"
+        />
+        <figcaption>
+          Resistor calculation. The pin outputs 5v and a red LED drops
+          about 2v, which leaves 3v across the resistor. At the
+          LED's 20mA limit that needs at least 150&Omega;, so I
+          used 220&Omega;, which gives 13.6mA. All three LEDs are
+          the same, so they use the same resistor.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Circuit</h2>
+      <div class="two-up">
+        <figure>
+          <img
+            src="a1-circuit.jpg"
+            alt="Top-down photo of the breadboard with three red LEDs, three resistors and jumper wires, next to the Arduino Uno"
+          />
+          <figcaption>
+            The circuit on a breadboard. Each red wire goes from an Arduino
+            pin to a 220&Omega; resistor and then to the long leg of an
+            LED. The short leg goes through an orange wire to the ground rail,
+            which the black wire connects to GND.
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="a1-circuit-pins.jpg"
+            alt="Closer photo showing the three red jumper wires plugged into pins 9, 10 and 11 on the Arduino Uno"
+          />
+          <figcaption>
+            Close-up of the Arduino side. The red wires are in pins 9, 10,
+            and 11, and the black wire is in GND.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Code</h2>
+      <pre><code>// pin for LED 1
+int led1 = 9;
+// pin for LED 2
+int led2 = 10;
+// pin for LED 3
+int led3 = 11;
+// time for each step in ms
+int delay_time = 500;
+
+// runs once at the start
+void setup() {
+  // set LED 1 pin as output
+  pinMode(led1, OUTPUT);
+  // set LED 2 pin as output
+  pinMode(led2, OUTPUT);
+  // set LED 3 pin as output
+  pinMode(led3, OUTPUT);
+}
+
+// runs over and over
+void loop() {
+  // LED 1 on
+  digitalWrite(led1, HIGH);
+  // wait
+  delay(delay_time);
+  // LED 1 off
+  digitalWrite(led1, LOW);
+
+  // LED 2 on
+  digitalWrite(led2, HIGH);
+  // wait
+  delay(delay_time);
+  // LED 2 off
+  digitalWrite(led2, LOW);
+
+  // LED 3 on
+  digitalWrite(led3, HIGH);
+  // wait
+  delay(delay_time);
+  // LED 3 off
+  digitalWrite(led3, LOW);
+
+  // LED 1 on
+  digitalWrite(led1, HIGH);
+  // LED 2 on
+  digitalWrite(led2, HIGH);
+  // LED 3 on
+  digitalWrite(led3, HIGH);
+  // wait with all three on
+  delay(delay_time);
+
+  // LED 1 off
+  digitalWrite(led1, LOW);
+  // LED 2 off
+  digitalWrite(led2, LOW);
+  // LED 3 off
+  digitalWrite(led3, LOW);
+  // wait with all three off
+  delay(delay_time);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Circuit in action</h2>
+      <figure>
+        <img
+          src="a1-blink.gif"
+          alt="Animated GIF of the three red LEDs lighting up one at a time and then flashing together"
+        />
+        <figcaption>
+          The LEDs light up one at a time, then all together, then all off.
+          Each step is 500ms (<code>delay_time</code>), so the pattern
+          repeats every 2.5 seconds.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Questions</h2>
+
+      <h3>1. Graph of voltage across the LEDs over time</h3>
+      <figure>
+        <img
+          src="a1-q1-graph.jpg"
+          alt="Hand-drawn graphs of voltage over time for LED 1, LED 2 and LED 3, each switching between 0v and 2v"
+        />
+        <figcaption>
+          Each LED is at about 2v when it is on and 0v when it is off. The
+          graph shows two rounds of the pattern: the LEDs turn on one at a
+          time, then all three turn on together, then all three turn off.
+          LED&nbsp;3 stays on for two steps in a row because it is the last
+          one before they all turn on.
+        </figcaption>
+      </figure>
+
+      <h3>2. How many LEDs could you blink independently, and how much current would that draw?</h3>
+      <p>
+        The Arduino Uno has 20 pins that can each control one LED, so that is
+        20 LEDs in total. We assume that each LED is at its max performance,
+        so that is 20 x 20mA, which is 400mA.
+      </p>
+
+      <h3>3. How fast do you need to blink your LEDs until you can no longer tell they are blinking?</h3>
+      <p>
+        I kept making <code>delay_time</code> smaller. I think when it was 6ms, I
+        could no longer tell that whetherthe LEDs were blinking.
+      </p>
+
+      <h3>4. Did you use AI tools in completing this assignment?</h3>
+      <p>
+        Yes, I used Claude. When my LEDs didn't light up, I sent it a photo
+        of my breadboard and it helped me find the problem: my LEDs were
+        plugged in backwards. It also helped me with
+        building this web page, since I forgot some of my frontend skills.
+      </p>
+      <p>
+        Reflection: it was most helpful for debugging, because it gave me a
+        starting point.
+      </p>
+    </section>
   </body>
 </html>
