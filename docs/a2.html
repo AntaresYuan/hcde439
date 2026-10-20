@@ -4,15 +4,204 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
 
-    <title>Example Student's HCDE 439 Physical Computing Page!</title>
+    <title>Antares Yuan's HCDE 439 Assignment 2: Fade!</title>
 
     <link href="style.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
-    <h1>Example Student's Assignment 2!</h1>
-    <div class="header">
-      <img src="red-panda.jpg" />
-      <p>Here is all the documentation for assignment 2!</p>
-    </div>
+    <p class="back"><a href="index.html">&larr; Back to home</a></p>
+    <h1>Assignment 2: Fade!</h1>
+    <p class="intro">
+      For this toy prototype, three red LEDs fade on one after another, like a
+      light running from left to right. If you hold down the button, the light
+      runs the other way, from right to left. Let go and it goes back to left
+      to right.
+    </p>
+
+    <section>
+      <h2>Schematic</h2>
+      <figure>
+        <img
+          src="a2-schematic.jpg"
+          alt="Hand-drawn schematic: Arduino pins 11, 10 and 9 each connect through a 220 ohm resistor to a red LED and then to ground. 5v connects through button S1 to pin 2, and a 1k ohm resistor connects pin 2 to ground."
+        />
+        <figcaption>
+          Each red LED connects to pin (11, 10, and 9) through a 220&Omega;
+          resistor, so <code>analogWrite()</code> can fade it. The
+          button S1 connects 5v to pin 2, and R4 (1k&Omega;) connects pin 2 to
+          ground.
+        </figcaption>
+      </figure>
+
+      <figure>
+        <img
+          src="a2-calculation.jpg"
+          alt="Handwritten resistor calculations: 3v / 0.02A = 150 ohm minimum so 220 ohm is used, giving 0.0136A; for the button, 5v / 1000 ohm = 0.005A"
+        />
+        <figcaption>
+          Resistor calculations. I used 220&Omega; for each LED because it is
+          above the 150&Omega; minimum, and 1k&Omega; for the button so only
+          5mA flows when it is pressed.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Circuit</h2>
+      <figure>
+        <img
+          src="a2-circuit.jpg"
+          alt="Top-down photo of the breadboard with three red LEDs, their resistors, a button and a 1k ohm resistor, wired to the Arduino Uno"
+        />
+        <figcaption>
+          The circuit on a breadboard. The LED on pin 11 is on the left and
+          the one on pin 9 is on the right. The button is on the right side of
+          the breadboard with the 1k&Omega; resistor next to it.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Code</h2>
+      <pre><code>// pin for LED 1
+int led1 = 11;
+// pin for LED 2
+int led2 = 10;
+// pin for LED 3
+int led3 = 9;
+// pin for the button
+int button = 2;
+// time for each brightness step in ms
+int fade_delay = 4;
+// first LED to light up
+int first = led1;
+// last LED to light up
+int last = led3;
+
+// runs once at the start
+void setup() {
+  // set LED 1 pin as output
+  pinMode(led1, OUTPUT);
+  // set LED 2 pin as output
+  pinMode(led2, OUTPUT);
+  // set LED 3 pin as output
+  pinMode(led3, OUTPUT);
+  // set button pin as input
+  pinMode(button, INPUT);
+}
+
+// runs over and over
+void loop() {
+  // button not pressed
+  if (digitalRead(button) == LOW) {
+    // start from LED 1
+    first = led1;
+    // end at LED 3
+    last = led3;
+  } else {
+    // button held: start from LED 3
+    first = led3;
+    // end at LED 1
+    last = led1;
+  }
+
+  // fade up the first LED
+  for (int b = 0; b &lt;= 255; b = b + 5) {
+    // set brightness
+    analogWrite(first, b);
+    // wait
+    delay(fade_delay);
+  }
+  // first LED off
+  digitalWrite(first, LOW);
+
+  // fade up LED 2
+  for (int b = 0; b &lt;= 255; b = b + 5) {
+    // set brightness
+    analogWrite(led2, b);
+    // wait
+    delay(fade_delay);
+  }
+  // LED 2 off
+  digitalWrite(led2, LOW);
+
+  // fade up the last LED
+  for (int b = 0; b &lt;= 255; b = b + 5) {
+    // set brightness
+    analogWrite(last, b);
+    // wait
+    delay(fade_delay);
+  }
+  // last LED off
+  digitalWrite(last, LOW);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Circuit in action</h2>
+      <figure>
+        <video
+          src="a2-demo.mp4"
+          controls
+          muted
+          loop
+          playsinline
+          width="100%"
+        ></video>
+        <figcaption>
+          The LEDs fade on from left to right. While I hold the button, they
+          go from right to left instead.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Questions</h2>
+
+      <h3>1. Voltage across an LED with analogWrite(led, 64), 128, and 255</h3>
+      <figure>
+        <img
+          src="a2-q1-graph.jpg"
+          alt="Hand-drawn graphs of voltage across an LED over 5 milliseconds: square waves that are high about 25% of the time, about 50% of the time, and a flat line that is always high"
+        />
+        <figcaption>
+          <code>analogWrite()</code> doesn't give a lower voltage. It turns
+          the pin on and off very fast (about 490 times per second on these
+          pins), and the number decides how much of the time it is on. 64 is
+          on about 25% of the time, 128 about 50%, and 255 is on all the time.
+          When it is on, the LED has about 2v across it.
+        </figcaption>
+      </figure>
+
+      <h3>2. Total current, Arduino limits, and battery life</h3>
+      <p>
+        Each LED draws about 13.6mA, so all three on at once is 3 x 13.6mA =
+        40.8mA. The button adds 5mA when it is pressed, so the most the
+        circuit draws is about 46mA. That is below the Arduino's 200mA total
+        limit, and each LED is also below the 20mA per-pin limit. With a
+        1200mAh battery, the circuit would run for about 1200mAh / 46mA is
+        about 26 hours.
+      </p>
+
+      <h3>3. Measured voltage across an LED</h3>
+      <p>
+        I measured 1.93v across one of my red LEDs while it was on. The
+        typical forward voltage for a red LED is about 1.8v to 2.2v, so my
+        measurement is within that range, and close to the 2v I used in my
+        resistor calculation.
+      </p>
+
+      <h3>4. Did you use AI tools in completing this assignment?</h3>
+      <p>
+        Yes, I used Claude. It helped me figure out how to wire the 4-leg
+        button on the breadboard. It also helped me with the code and with
+        building this web page, since I forgot some of my frontend skills. I also used it to help
+        me check and refine the language.
+      </p>
+      <p>
+        Reflection: it was most helpful for the wiring, because it gave me a
+        starting point.
+      </p>
+    </section>
   </body>
 </html>
