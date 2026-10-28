@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+    <title>Antares Yuan's HCDE 439 Assignment 3: Input Output!</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <p class="back"><a href="index.html">&larr; Back to home</a></p>
+    <h1>Assignment 3: Input Output!</h1>
+    <p class="intro">
+      For this smart home prototype, a photoresistor senses how bright the
+      room is. A servo works like a light gauge: the brighter the room, the
+      further it turns. A red LED works like a night light: the darker the
+      room, the brighter it gets.
+    </p>
+
+    <section>
+      <h2>Schematic</h2>
+      <figure>
+        <img
+          src="a3-schematic.jpg"
+          alt="Hand-drawn schematic: 5v goes through photoresistor R1 to A0 and then through 10k ohm R2 to ground; the servo signal is on pin 9 with power from 5v; pin 6 drives a 220 ohm resistor and a red LED to ground"
+        />
+        <figcaption>
+          The photoresistor (R1) and a 10k&Omega; resistor (R2) make a voltage
+          divider, and A0 reads the voltage in the middle. The servo signal is
+          on pin 9, and the LED is on pin 6 through a 220&Omega; resistor.
+        </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="a3-calculation.jpg"
+          alt="Handwritten calculations for R2, the voltages at A0, the dark threshold and the LED resistor"
+        />
+        <figcaption>
+          Calculations. R2 = &radic;(1k&Omega; &times; 100k&Omega;) =
+          10k&Omega;. With R2 = 10k&Omega;, A0 reads from 285 (1.39v, covered)
+          to 995 (4.86v, flashlight), which are the numbers I use in
+          <code>constrain()</code> and <code>map()</code>. The dark threshold
+          640 is halfway between them.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Circuit</h2>
+      <figure>
+        <img
+          src="a3-circuit.jpg"
+          alt="Top-down photo of the breadboard with the photoresistor, resistors, LED and servo wired to the Arduino Uno"
+        />
+        <figcaption>
+          The circuit on a breadboard. The yellow wire goes from A0 to the row
+          between the photoresistor and the 10k&Omega; resistor. The servo is
+          on pin 9 and the LED is on pin 6.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Code</h2>
+      <p>
+        The servo part is based on the Arduino "Knob" example (File &gt;
+        Examples &gt; Servo &gt; Knob).
+      </p>
+      <pre><code>// include the servo library
+#include &lt;Servo.h&gt;
+
+// create a servo object
+Servo myServo;
+// lowest sensor value
+int darkest = 285;
+// highest sensor value
+int brightest = 995;
+// sensor value where the room counts as dark
+int darkLevel = 640;
+
+// runs once when the Arduino is powered up
+void setup() {
+  // begin serial communication at 9600 baud
+  Serial.begin(9600);
+  // attach the servo to pin 9
+  myServo.attach(9);
+  // set pin 6 as an output
+  pinMode(6, OUTPUT);
+}
+
+// runs over and over until the Arduino is powered off
+void loop() {
+  // read the analog in value
+  int val = analogRead(A0);
+  // limit the sensor value to between 285 and 995
+  int light = constrain(val, darkest, brightest);
+  // map it to the range of the servo angle
+  int angle = map(light, darkest, brightest, 0, 180);
+  // move the servo to the angle
+  myServo.write(angle);
+  // map it to the range of the analog out, reversed
+  int ledValue = map(light, darkest, brightest, 255, 0);
+  // change the analog out value
+  analogWrite(6, ledValue);
+
+  // print a string
+  Serial.print("light = ");
+  // print the sensor value
+  Serial.print(val);
+  // print a string
+  Serial.print("\t angle = ");
+  // print the servo angle
+  Serial.print(angle);
+  // check if the sensor value is below the dark level
+  if (val &lt; darkLevel) {
+    // print a string with a new line
+    Serial.println("\t dark, night light on");
+  } else {
+    // print a string with a new line
+    Serial.println("\t bright");
+  }
+
+  // wait 100 ms
+  delay(100);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Circuit in action</h2>
+      <figure>
+        <video
+          src="a3-demo.mp4"
+          controls
+          muted
+          loop
+          playsinline
+          width="100%"
+        ></video>
+        <figcaption>
+          With the flashlight the servo turns toward 180 degrees and the LED
+          turns off. When I cover the photoresistor, the servo goes to 0
+          degrees and the LED is fully on.
+        </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="a3-serial.png"
+          alt="Serial monitor output showing light readings, servo angles and dark or bright"
+        />
+        <figcaption>
+          Serial monitor output. When I cover the photoresistor, the reading
+          drops from about 670 to about 310, the servo angle goes down to
+          about 6, and the message changes from "bright" to "dark, night light
+          on". When I uncover it the reading goes back up, and it still says
+          dark until the reading passes 640.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Questions</h2>
+
+      <h3>1. Can the variable resistor be either R1 or R2?</h3>
+      <p>
+        It can be either one. It only changes which way the voltage goes.
+      </p>
+      <ul>
+        <li>
+          Photoresistor as R1 (my circuit): V = 5v &times; 10k / (R_photo +
+          10k). Bright (1k&Omega;) gives 4.55v, dark (100k&Omega;) gives
+          0.45v. More light means higher voltage.
+        </li>
+        <li>
+          Photoresistor as R2: V = 5v &times; R_photo / (10k + R_photo).
+          Bright (1k&Omega;) gives 0.45v, dark (100k&Omega;) gives 4.55v. More
+          light means lower voltage.
+        </li>
+      </ul>
+      <p>
+        The range is the same either way, so both work. I would just flip the
+        numbers in <code>map()</code>.
+      </p>
+
+      <h3>2. Voltage at V-measure during the video</h3>
+      <figure>
+        <img
+          src="a3-q2-graph.jpg"
+          alt="Hand-drawn graph of voltage at A0 over 22.5 seconds: 3.30v in room light, 4.86v with the flashlight, and 1.23v when covered"
+        />
+        <figcaption>
+          Voltage at A0 during the video. Room light is about 3.30v (reading
+          675), the flashlight is about 4.86v (reading 995), and covering it
+          is about 1.23v (reading about 252).
+        </figcaption>
+      </figure>
+
+      <h3>3. 10-bit PWM and a 16-bit ADC</h3>
+      <p>
+        A 16-bit ADC splits 0 to 5v into 65536 steps instead of 1024, so every
+        reading gets about 64 times bigger. My range 285 to 995 would become
+        about 18240 to 63680. A 10-bit PWM takes 0 to 1023 instead of 0 to
+        255. So my LED line would change from map(light, 285, 995, 255, 0) to
+        map(light, 18240, 63680, 1023, 0). The servo line stays the same,
+        because the angle is still 0 to 180. I would also use long instead of
+        int, because int only goes up to 32767.
+      </p>
+    </section>
+  </body>
+</html>
