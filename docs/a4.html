@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+    <title>Antares Yuan's HCDE 439 Assignment 4: Libraries!</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <p class="back"><a href="index.html">&larr; Back to home</a></p>
+    <h1>Assignment 4: Libraries!</h1>
+    <p class="intro">
+      For this smart home prototype, a fork works as a touch button. When I
+      touch the fork, a servo turns to 180 degrees to open a curtain. When I
+      let go, it turns back to 0 degrees and the curtain closes. It uses two
+      libraries: CapacitiveSensor for the touch input and Servo for the
+      output.
+    </p>
+
+    <section>
+      <h2>Schematic</h2>
+      <figure>
+        <img
+          src="a4-schematic.jpg"
+          alt="Hand-drawn schematic: pin 2 (send) goes through a 1M ohm resistor R1 to pin 4 (receive) and the fork; the servo signal is on pin 9, servo power on 5v, and ground to GND"
+        />
+        <figcaption>
+          Pin 2 (send) goes through R1 (1M&Omega;) to pin 4 (receive), and
+          the fork is connected at pin 4. The servo signal (SIG) is on pin 9,
+          its power is 5v, and its ground goes to GND.
+        </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="a4-calculation.jpg"
+          alt="Handwritten calculations for the current through the 1M ohm resistor and the touch threshold"
+        />
+        <figcaption>
+          Calculations. I used 1M&Omega; because the lecture says 1M&Omega;
+          works for touching the metal directly. The current through it is
+          5v / 1M&Omega; = 5uA, far below 20mA, so it is safe for the pins.
+          Not touching reads about 35 and touching reads about 1750. Their
+          geometric mean is about 247, so I picked touchLevel = 200. It is
+          about 5.7 times the not touching value and about 8.75 times lower
+          than the touching value, so noise does not open the curtain but a
+          real touch always does.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Circuit</h2>
+      <figure>
+        <img
+          src="a4-circuit.jpg"
+          alt="Photo of the breadboard with the 1M ohm resistor, the servo and a fork connected with an alligator clip to the Arduino Uno"
+        />
+        <figcaption>
+          The circuit on a breadboard. The 1M&Omega; resistor sits between
+          pin 2 and pin 4. A wire from the pin 4 row goes to an alligator
+          clip on the fork. The servo is on pin 9, with power and ground from
+          the side rails.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Code</h2>
+      <p>
+        Based on the CapacitiveSensor and Servo examples from lecture 8.
+      </p>
+      <pre><code>// touch library
+#include &lt;CapacitiveSensor.h&gt;
+// servo library
+#include &lt;Servo.h&gt;
+
+// touch sensor on pins 2 and 4
+CapacitiveSensor touch = CapacitiveSensor(2, 4);
+// the servo
+Servo myServo;
+// touch threshold
+long touchLevel = 200;
+
+// runs once
+void setup() {
+  // no autocalibrate
+  touch.set_CS_AutocaL_Millis(0xFFFFFFFF);
+  // start serial
+  Serial.begin(9600);
+  // servo on pin 9
+  myServo.attach(9);
+}
+
+// runs over and over
+void loop() {
+  // read the touch value
+  long val = touch.capacitiveSensor(30);
+
+  // print label
+  Serial.print("touch = ");
+  // print value
+  Serial.print(val);
+  // fork is touched
+  if (val &gt; touchLevel) {
+    // open curtain
+    myServo.write(180);
+    // print status
+    Serial.println("\t touched, curtain open");
+  } else {
+    // close curtain
+    myServo.write(0);
+    // print status
+    Serial.println("\t not touched, curtain closed");
+  }
+
+  // wait 50 ms
+  delay(50);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Circuit in action</h2>
+      <figure>
+        <img
+          src="a4-demo.gif"
+          alt="Animated gif: touching the fork turns the servo arm, letting go turns it back"
+        />
+        <figcaption>
+          When I touch the fork, the servo turns to 180 degrees (curtain
+          open). When I let go, it turns back to 0 degrees (curtain closed).
+        </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="a4-serial.png"
+          alt="Serial monitor output showing touch values around 30 when not touched and around 1800 when touched"
+        />
+        <figcaption>
+          Serial monitor output. Not touching reads about 28 to 44, and
+          touching reads about 1695 to 1829. Every reading above 200 opens
+          the curtain.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Questions</h2>
+
+      <h3>1. Voltage at pin 9 during the servo loop</h3>
+      <figure>
+        <img
+          src="a4-q1-graph.jpg"
+          alt="Hand-drawn graph of pin 9 voltage: 5v pulses every 20ms that get wider from 1ms to 2ms over about 18.1 seconds, with zoomed views at pos 0 and pos 180"
+        />
+        <figcaption>
+          The Servo library sends a 5v pulse on pin 9 every 20ms. The pulse
+          is 1ms wide at 0 degrees and 2ms wide at 180 degrees, so it gets
+          wider as the servo turns. Each angle lasts 100ms (5 pulses), so the
+          whole loop takes about 18.1s, then starts over. The top graph is not
+          to scale.
+        </figcaption>
+      </figure>
+
+      <h3>2. A broken reading 1% of the time</h3>
+      <pre><code>read val
+// the reading jumps way too far from the last good one
+if (val is way bigger or smaller than lastGood) {
+  // ignore it
+  val = lastGood
+}
+// save it for next time
+lastGood = val</code></pre>
+      <p>
+        A broken reading shows up as one sudden jump. If a reading jumps too
+        far from the last good one, I ignore it and keep the last good value.
+      </p>
+
+      <h3>3. A noisy reading that is off by 10%</h3>
+      <pre><code>read val
+// keep the last 10 readings
+add val to a list of the last 10 readings
+// average them
+smooth = average of the list
+// use the smooth value instead of val
+use smooth</code></pre>
+      <p>
+        The noise goes up and down at random, so averaging the last 10
+        readings cancels most of it out.
+      </p>
+
+      <h3>4. Did you use AI tools in completing this assignment?</h3>
+      <p>
+        Yes, I used Claude. When my code would not compile, it told me I
+        needed to install the CapacitiveSensor library. When the touch did
+        nothing, I sent it a photo of my breadboard and it helped me find
+        that the wire to the fork was not clipped on. It also helped me with
+        the code and with building this web page, since I forgot some of my
+        frontend skills.
+      </p>
+      <p>
+        Reflection: it was most helpful for debugging, because it gave me a
+        starting point.
+      </p>
+    </section>
+  </body>
+</html>
