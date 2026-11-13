@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+    <title>Antares Yuan's HCDE 439 Assignment 5: High(er) voltage and transistors!</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <p class="back"><a href="index.html">&larr; Back to home</a></p>
+    <h1>Assignment 5: High(er) voltage and transistors!</h1>
+    <p class="intro">
+      For this smart home prototype, I made a fan that I can control with a
+      TV remote. Button 1, 2 and 3 set the fan to slow, medium and fast, and
+      button 0 turns it off. The remote is read with the IRremote library.
+      The motor gets its power from a separate power module, and the Arduino
+      switches it with an N-MOSFET using analogWrite().
+    </p>
+
+    <section>
+      <h2>Schematic</h2>
+      <figure>
+        <img
+          src="a5-schematic.jpg"
+          alt="Hand-drawn schematic: IR receiver on 5v, D11 and ground; 9v battery into a power module that gives 5v to a DC motor with a 1N4007 diode across it; the motor goes to the drain of an IRLZ44N MOSFET, the gate is on D5 and the source is on ground; all grounds are connected"
+        />
+        <figcaption>
+          The IR receiver signal goes to D11. The motor gets 5v from the power module, and D5 switches it through the IRLZ44N. The 1N4007 protects the circuit from motor flyback. All grounds are connected.
+        </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="a5-calculation.jpg"
+          alt="Handwritten calculations for external power, MOSFET current, gate voltage, analogWrite average voltages, key voltages and the pinMode state"
+        />
+        <figcaption>
+          The motor needs 250mA, more than the Arduino 5v pin gives (200mA), so it uses the power module. 0.25A is far below the IRLZ44N max of 47A, and 5v on the gate is enough to turn it fully on.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Circuit</h2>
+      <figure>
+        <img
+          src="a5-circuit.jpg"
+          alt="Photo of the breadboard with the power module, IR receiver, IRLZ44N MOSFET, diode and fan motor connected to the Arduino Uno"
+        />
+        <figcaption>
+          The circuit on a breadboard. I moved the IR ground to its own Arduino GND pin, because motor noise on the shared rail blocked the remote.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Code</h2>
+      <p>
+        Based on the IRremote library examples and the motor speed example
+        from lecture 10.
+      </p>
+      <pre><code>// remote library
+#include &lt;IRremote.hpp&gt;
+
+// MOSFET gate pin
+int motorPin = 5;
+// IR receiver pin
+int irPin = 11;
+// motor speed, 0 to 255
+int speed = 0;
+
+// runs once
+void setup() {
+  // start serial
+  Serial.begin(9600);
+  // start the IR receiver
+  IrReceiver.begin(irPin);
+  // pin 5 is an output, it starts LOW so the motor is off
+  pinMode(motorPin, OUTPUT);
+}
+
+// runs over and over
+void loop() {
+  // a button was pressed
+  if (IrReceiver.decode()) {
+    // read the button code
+    int button = IrReceiver.decodedIRData.command;
+
+    // button 0
+    if (button == 22) {
+      // stop
+      speed = 0;
+    }
+    // button 1
+    if (button == 12) {
+      // slow
+      speed = 150;
+    }
+    // button 2
+    if (button == 24) {
+      // medium
+      speed = 200;
+    }
+    // button 3
+    if (button == 94) {
+      // fast
+      speed = 230;
+    }
+
+    // print label
+    Serial.print("button = ");
+    // print button code
+    Serial.print(button);
+    // print label
+    Serial.print("\t speed = ");
+    // print speed
+    Serial.println(speed);
+
+    // get ready for the next button
+    IrReceiver.resume();
+  }
+
+  // set the motor speed
+  analogWrite(motorPin, speed);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Circuit in action</h2>
+      <figure>
+        <img
+          src="a5-demo.gif"
+          alt="Animated gif: pressing buttons on the remote makes the fan start, change speed and stop"
+        />
+        <figcaption>
+          Buttons 1, 2 and 3 set the speed, and 0 stops the fan.
+        </figcaption>
+      </figure>
+      <figure>
+        <video
+          src="a5-demo.mp4"
+          controls
+          muted
+          loop
+          playsinline
+          width="100%"
+        ></video>
+        <figcaption>
+          The original video of the same demo.
+        </figcaption>
+      </figure>
+      <figure>
+        <img
+          src="a5-serial.png"
+          alt="Serial monitor showing button codes 22 and 12 with speed 0 and 150"
+        />
+        <figcaption>
+          Button 0 sends 22 and button 1 sends 12. The 0 lines are noise and are ignored.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Questions</h2>
+
+      <h3>1. Max current between pins 2 and 3</h3>
+      <p>
+        My MOSFET is an IRLZ44N. Pin 2 is the drain and pin 3 is the source.
+        From the datasheet, the max continuous drain current is 47A (at 25
+        degrees C, VGS = 10v), and the max pulsed current is 160A.
+      </p>
+
+      <h3>2. Arduino, DC motor and flyback diode</h3>
+      <p>
+        The right half of my schematic above is this circuit: D5 drives the
+        gate of an N-MOSFET, the motor sits between the 5v supply and the
+        drain, and the diode goes across the motor with the stripe on the 5v
+        side. Parts I could use:
+      </p>
+      <figure>
+        <img
+          src="a5-q2-schematic.jpg"
+          alt="Hand-drawn schematic: Arduino D5 to the gate of an IRLZ44N, DC motor from 5v motor power to the drain, 1N4007 diode across the motor, source to ground"
+        />
+        <figcaption>
+          D5 drives the MOSFET gate, and the diode sits across the motor.
+        </figcaption>
+      </figure>
+      <ul>
+        <li>
+          Arduino Uno R3:
+          <a href="https://docs.arduino.cc/resources/datasheets/A000066-datasheet.pdf">datasheet</a>
+        </li>
+        <li>
+          DC motor, 3v to 6v hobby motor:
+          <a href="https://www.adafruit.com/product/711">Adafruit 711</a>
+        </li>
+        <li>
+          Flyback diode 1N4007:
+          <a href="https://www.onsemi.com/pdf/datasheet/1n4001-d.pdf">datasheet</a>
+        </li>
+        <li>
+          N-MOSFET IRLZ44N:
+          <a href="https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725">datasheet</a>
+        </li>
+      </ul>
+
+      <h3>3. L293D with two motors</h3>
+      <figure>
+        <img
+          src="a5-q3-schematic.jpg"
+          alt="Hand-drawn schematic of an L293D: motor 1 between pins 3 and 6, motor 2 between pins 11 and 14, inputs on D2, D3, D4 and D7, enable pins on 5v"
+        />
+        <figcaption>
+          Motor 1 is controlled by D2 and D3, motor 2 by D4 and D7. Both enable pins are on 5v.
+        </figcaption>
+      </figure>
+      <pre><code>// both forward
+D2 HIGH, D3 LOW   // motor 1 forward
+D4 HIGH, D7 LOW   // motor 2 forward
+wait 1 second
+
+// both back
+D2 LOW, D3 HIGH   // motor 1 back
+D4 LOW, D7 HIGH   // motor 2 back
+wait 1 second
+
+// motor 1 forward, motor 2 back
+D2 HIGH, D3 LOW
+D4 LOW, D7 HIGH
+wait 1 second
+
+// motor 1 back, motor 2 forward
+D2 LOW, D3 HIGH
+D4 HIGH, D7 LOW
+wait 1 second</code></pre>
+
+      <h3>4. Did you use AI tools in completing this assignment?</h3>
+      <p>
+        Yes, I used Claude. It helped me pick a design that uses parts from
+        class, draw reference diagrams for my schematics and wiring, and write
+        the code and calculations. When the
+        remote stopped working while the motor was running, it helped me
+        figure out that motor noise was the problem and I fixed it by moving
+        the IR ground to its own Arduino GND pin. It also helped me with
+        building this web page.
+      </p>
+      <p>
+        Reflection: it was most helpful for debugging, because it gave me a
+        starting point.
+      </p>
+    </section>
+  </body>
+</html>
