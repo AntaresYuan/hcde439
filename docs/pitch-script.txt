@@ -1,0 +1,15 @@
+DeskBuddy - 1 minute pitch
+
+Hi, I'm Antares, and my project is DeskBuddy.
+
+So this happens to me a lot: I sit down to study in the afternoon, and suddenly it's dark and I'm squinting at my laptop. Or it's Seattle in November and I only notice my room is freezing when my hands are already cold.
+
+DeskBuddy is a little box that sits on my desk and notices these things for me.
+
+It has two sensors on top. A photoresistor checks how bright my desk is, and when it gets too dark, a yellow LED turns on to remind me to turn on my lamp. Once the lamp is on, the light goes off by itself.
+
+A thermistor checks the room temperature. When it gets too cold, it beeps once and a blue LED stays on until the room warms up again.
+
+Inside it's just an Arduino and a breadboard in a cardboard box, so the main work is calibrating the two sensors and building the box. My timeline and backup plans are on the slide.
+
+That's DeskBuddy. Thanks!

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+    <title>Antares Yuan's HCDE 439 Final Project Proposal: DeskBuddy</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <p class="back"><a href="index.html">&larr; Back to home</a></p>
+    <h1>Final Project Proposal: DeskBuddy</h1>
+    <p class="intro">
+      A little box that keeps your study corner bright and warm.
+    </p>
+
+    <section>
+      <figure>
+        <img
+          src="proposal-slide.png"
+          alt="My proposal slide from the class deck: DeskBuddy, with the concept, bill of materials, timeline, plan B and a sketch of the box"
+        />
+        <figcaption>My slide in the class proposal deck.</figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Concept</h2>
+      <p>
+        DeskBuddy is a little desk box that helps students keep their study
+        space bright and warm. When my desk gets dark, a yellow LED reminds me
+        to turn on my lamp. When my room gets cold, it beeps once and a blue
+        LED reminds me to turn on the heater.
+      </p>
+      <p>
+        Why: Seattle gets dark before 5pm, and I keep noticing too late that
+        I'm studying in the dark and cold.
+      </p>
+      <ul>
+        <li>
+          <b>Inputs:</b> a photoresistor for how bright my desk is, and a
+          thermistor for the room temperature.
+        </li>
+        <li>
+          <b>Outputs:</b> a yellow LED and a blue LED for the reminders, and a
+          piezo buzzer that beeps once when it gets cold.
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Sketch</h2>
+      <figure>
+        <img
+          src="proposal-sketch.svg"
+          alt="Sketch of a small box on a desk with a photoresistor and a thermistor on top, a yellow LED, a blue LED and buzzer holes on the front, and a USB cable out the side"
+        />
+        <figcaption>
+          The Arduino and breadboard sit inside the box. The sensors poke out
+          through holes in the top.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Bill of Materials</h2>
+      <ul>
+        <li>Photoresistor + 10k&Omega; resistor (senses desk brightness)</li>
+        <li>Thermistor + fixed resistor (senses room temperature)</li>
+        <li>Yellow LED + blue LED + 2x 220&Omega; resistors (the two reminders)</li>
+        <li>Piezo buzzer (one beep when it gets cold)</li>
+        <li>Arduino Uno, breadboard, jumper wires, USB cable (logic and power)</li>
+        <li>Small cardboard box (body, with holes for the sensors and LEDs)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Timeline</h2>
+      <ul>
+        <li>
+          <b>Week 1:</b> build the circuit and calibrate my "dark" and "cold"
+          values.
+        </li>
+        <li><b>Week 2:</b> write the code and cut the box.</li>
+        <li>
+          <b>Week 3:</b> put everything inside and test it at my desk at night.
+        </li>
+      </ul>
+      <h3>Plan B</h3>
+      <ul>
+        <li>
+          If the Arduino heats up the thermistor, I'll move it outside the box.
+        </li>
+        <li>
+          If cardboard is too flimsy, I'll use a small plastic container.
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>
